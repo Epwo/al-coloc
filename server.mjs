@@ -14,7 +14,8 @@ const app = express();
 const port = 3000;
 const AnnoncersPostQuery = 'INSERT INTO annoncers SET ? ON DUPLICATE KEY UPDATE nbPlace=VALUES(nbPlace), ConsoNeeds=VALUES(ConsoNeeds), AgeMin=VALUES(AgeMin), AgeMax=VALUES(AgeMax), titre=VALUES(titre)';
 const SeekersPostQuery = 'INSERT INTO seekers SET ? ON DUPLICATE KEY UPDATE nbPers=VALUES(nbPers), consoDisp=VALUES(consoDisp), AgeMin=VALUES(AgeMin), AgeMax=VALUES(AgeMax)';
-
+const SeekersDelQuery =  'DELETE FROM seekers WHERE usrName = ?';
+const AnnoncerDelQuery =  'DELETE FROM annoncers WHERE usrName = ? AND adrr = ?';
 
 // Middleware to parse JSON bodies
 app.use(express.json());
@@ -65,22 +66,28 @@ app.post('/upload/seekers', (req, res) => {
 });
 
 
+app.post('/del/seekers', (req, res) => {
+  handleDeleteRequest(req, res, SeekersDelQuery);
+});
 
-app.post('/del', (req, res) => {
+app.post('/del/annoncers', (req, res) => {
+  handleDeleteRequest(req, res, AnnoncerDelQuery);
+});
+
+
+const handleDeleteRequest = (req, res, deleteQuery) => {
   console.log('We want to remove this:', req.body);
   const annoncerData = req.body;
-
-  const deleteQuery = 'DELETE FROM annoncers WHERE usrName = ? AND adrr = ?';
   pool.query(deleteQuery, [annoncerData.usrName, annoncerData.adrr], (error, results) => {
     if (error) {
       console.error('Error executing query:', error);
       res.send('Error while deleting data!');
       return;
     }
-    console.log('Deleted row with usrName:', annoncerData.usrName, 'and adrr:', annoncerData.adrr);
+    console.log('Deleted row with usrName:', annoncerData.usrName);
     res.send('Data deleted successfully!');
   });
-});
+};
 
 
 app.listen(port, () => {
