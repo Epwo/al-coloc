@@ -94,3 +94,89 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
+const columnMapping = {
+  nbPers: 'nbPlace',
+  ConsoDisp: 'ConsoNeeds',
+  AgeMin: 'AgeMin',
+  AgeMax: 'AgeMax',
+};
+
+const handleSearchRequest = (req, res) => {
+  const searchCriteria = req.body;
+  let query = 'SELECT * FROM annoncers WHERE ';
+  let criteriaCount = 0;
+
+  // Compte le nombre de critères fournis
+  for (const key in searchCriteria) {
+    if (searchCriteria.hasOwnProperty(key) && key !== 'usrName') {
+      criteriaCount++;
+    }
+  }
+  
+  // Construit la requête SQL en fonction des critères fournis et de l'objet de mappage
+  for (const key in searchCriteria) {
+    if (searchCriteria.hasOwnProperty(key) && key !== 'usrName') {
+      if (key === 'AgeMin'|| key === 'AgeMax') {
+        query += `AgeMin <= ?  AND AgeMax >= ? `;
+      } 
+      else if(key == 'nbPers'){
+        query += 'nbPlace >= ? ';
+      }
+      else {
+        query += `${columnMapping[key]} = ? `;
+      }
+      if (criteriaCount > 1) {
+        query += 'AND ';
+        criteriaCount--;
+      }
+    }
+  }
+
+  console.log('Query:', query);
+  // Construit les valeurs pour la requête SQL en fonction des critères fournis
+  const queryValues = [];
+  for (const key in searchCriteria) {
+    if (searchCriteria.hasOwnProperty(key) && key !== 'usrName') {
+      if (key === 'AgeMin' || key === 'AgeMax') {
+        queryValues.push(searchCriteria[key]);
+        queryValues.push(searchCriteria[key]);
+      } else {
+        queryValues.push(searchCriteria[key]);
+      }
+    }
+  }
+
+  // Exécute la requête SQL
+  pool.query(query, queryValues, (error, results) => {
+    if (error) {
+      console.error('Error executing query:', error);
+      res.send('Error while fetching data!');
+      return;
+    }
+
+    // Filtre les résultats pour inclure seulement ceux qui correspondent à au moins 3/4 des critères
+    const filteredResults = results.filter(result => {
+      let matchCount = 0;
+      for (const key in searchCriteria) {
+        if (searchCriteria.hasOwnProperty(key) && key !== 'usrName') {
+          if (key === 'AgeMin' || key === 'AgeMax') {
+            if (result[columnMapping[key]] >= searchCriteria[key] && result[columnMapping[key]] <= searchCriteria[key]) {
+              matchCount++;
+            }
+          } else if (result[columnMapping[key]] === searchCriteria[key]) {
+            matchCount++;
+          }
+        }
+      }
+      return matchCount >= Math.floor(criteriaCount * 0.75);
+    });
+
+    console.log('Query results:', filteredResults);
+    res.send(filteredResults);
+  });
+};
+
+// Ajoute un nouveau point de terminaison pour la recherche d'annonces
+app.post('/search', (req, res) => {
+  handleSearchRequest(req, res);
+});

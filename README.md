@@ -8,5 +8,5 @@
 * [X] faire le POST pour suppr une recherche
 * [X] faire le GET pour annonces
 * [X] faire le GET pour les seekers
-* [ ] la logique de matching
+* [X] la logique de matching
 * [ ]
