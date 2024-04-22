@@ -9,4 +9,5 @@
 * [X] faire le GET pour annonces
 * [X] faire le GET pour les seekers
 * [X] la logique de matching
+* [ ] faire la distance, du seeker vers le host. sans lui donner l'addresse de suite.
 * [ ]
